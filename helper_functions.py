@@ -9,6 +9,8 @@ os.environ["OPENAI_API_KEY"] = API_KEY
 
 ConversationHistory = []
 
+
+
 def construct_index(directory_path):
     max_input_size = 4096
     num_outputs = 512
@@ -29,7 +31,6 @@ def construct_index(directory_path):
 
 
 def chatbot(input_text):
-
     ConversationHistory.append({"role": "user", "content": input_text})
 
     # concatenate the ConversationHistory into a single string
@@ -38,13 +39,13 @@ def chatbot(input_text):
     for message in ConversationHistory:
         formatted_conversation += f"{message['role']}: {message['content']}"
 
-    query_prompt = f"Given the conversation history: {formatted_conversation} Provide a helpful response:"
+    query_prompt = f"Given the conversation history: {formatted_conversation} and using only the information in the indexed documents as a primary source, provide a helpful response:"
 
     index = GPTSimpleVectorIndex.load_from_disk('index.json')
-    response = index.query(query_prompt, response_mode="tree_summarize") 
+    response = index.query(query_prompt, response_mode="compact")  # default, compact, and tree_summarize
 
     ConversationHistory.append({"role": "assistant", "content": response.response})
-    # default, compact, and tree_summarize
+
     return response.response
 
 
@@ -80,3 +81,6 @@ def update_document_list():
     for document in os.listdir("docs"):
         document_list.append(document)
     return document_list
+
+if not os.path.exists("index.json"):
+    construct_index("docs")
